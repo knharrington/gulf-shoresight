@@ -6,6 +6,21 @@
   library(lubridate)
 }
 
+# --------------------------- options ------------------------------------------
+start_date <- as.Date("2026-06-19")
+end_date <- as.Date("2026-07-07")
+ports <- c("Brazos Santiago", "Perdido Pass")
+
+# plot aesthetics
+{
+  entering_col <- "#56CFE1"
+  exiting_col <- "#FF8A65"
+  highlight_col <- "#1E2D44"
+  background_col <- "#0B1421"
+}
+
+# ---------------------- data preprocessing ------------------------------------
+
 # read example datasets
 brazos_raw <- fread("data/Brazos Santiago_2026-06-19 - 2026-07-07.csv")
 perdido_raw <- fread("data/Perdido Pass_2026-06-19 - 2026-07-07.csv")
@@ -19,12 +34,15 @@ data$Day <- factor(weekdays(data$Date), levels = c("Monday", "Tuesday", "Wednesd
 data$Month <- format(data$Date, "%B")
 data$Direction <- factor(data$Direction, levels = c("Entering", "Exiting"))
 
-# plot aesthetics
-{
-  entering_col <- "#56CFE1"
-  exiting_col <- "#FF8A65"
-  highlight_col <- "#1E2D44"
-  }
+# use inputs to filter data
+data <- data %>%
+  filter(
+    Port %in% ports,
+    Date >= start_date,
+    Date <= end_date
+  )
+
+# ---------------------------- ggplot themes -----------------------------------
 
 # custom ggplot theme based on Tator platform
 theme_tator <- function() {
@@ -63,6 +81,7 @@ theme_tator_light <- function() {
 }
 
 # ------------------ line graph of counts per day ------------------------------
+
 # format data to show counts by port, day, and direction
 day_data <- data %>%
   group_by(Port, Date) %>%
@@ -89,7 +108,8 @@ weekend_rects <- day_data %>%
 # plot line graph for both passes
 count_per_day <- ggplot(data=day_data) +
   geom_rect(data=weekend_rects, aes(xmin=Start-0.5, xmax=End+0.5, ymin=-Inf, ymax=Inf), fill = highlight_col, alpha=0.2, inherit.aes = FALSE) +
-  geom_line(aes(x=Date, y=Count, color=Direction), lwd=1) +
+  geom_point(aes(x=Date, y=Count, color=Direction), size=1) +
+  geom_line(aes(x=Date, y=Count, color=Direction)) +
   scale_color_manual(values = c("Entering" = entering_col, "Exiting" = exiting_col)) +
   scale_y_continuous(breaks = seq(0,max(day_data$Count), 100)) +
   scale_x_date(date_breaks = "1 day") +
@@ -99,10 +119,11 @@ count_per_day <- ggplot(data=day_data) +
     title = paste0("Date Range: ", min(day_data$Date), " - ", max(day_data$Date))
   )
 
-ggsave(filename = paste0("figures/count_per_day_", format(Sys.Date(), "%Y-%m-%d"), ".png"), 
+ggsave(filename = paste0("figures/count_per_day_", min(day_data$Date), ".png"), 
        plot = count_per_day, width = 8, height = 5, dpi = 300)
 
 # --------------------- bar graph for one week of data -------------------------
+
 bar_data <- data %>%
   filter(
     Date >= as.Date("2026-06-29"), 
@@ -126,10 +147,11 @@ count_one_week <- ggplot(data=bar_data) +
     title = paste0("Week of ", min(bar_data$Date))
   )
 
-ggsave(filename = paste0("figures/count_per_weekday_", format(Sys.Date(), "%Y-%m-%d"), ".png"), 
+ggsave(filename = paste0("figures/count_per_weekday_", min(bar_data$Date), ".png"), 
        plot = count_one_week, width = 8, height = 5, dpi = 300)
 
 #  ------------- average count per weekday for one month -----------------------
+
 avg_weekday <- data %>%
   filter(Month == "June") %>%
   group_by(Port, Month, Date, Day) %>%
@@ -159,10 +181,11 @@ avg_count_weekday <- ggplot(data=avg_weekday) +
     title = paste(first(avg_weekday$Month), year(avg_weekday$Date))
   )
 
-ggsave(filename = paste0("figures/avg_count_weekday_", format(Sys.Date(), "%Y-%m-%d"), ".png"), 
+ggsave(filename = paste0("figures/avg_count_weekday_", min(avg_weekday$Date), ".png"), 
        plot = avg_count_weekday, width = 8, height = 5, dpi = 300)
 
 # ----------------- difference in counts per month and weekday -----------------
+
 diff_weekday <- data %>%
   filter(Month == "June") %>%
   group_by(Port, Month, Date, Day) %>%
@@ -186,10 +209,11 @@ diff_count_weekday <- ggplot(data=diff_weekday) +
     y = "Entering Count - Exiting Count"
   )
 
-ggsave(filename = paste0("figures/diff_count_weekday_", format(Sys.Date(), "%Y-%m-%d"), ".png"), 
+ggsave(filename = paste0("figures/diff_count_weekday_", min(diff_weekday$Date), ".png"), 
        plot = diff_count_weekday, width = 8, height = 5, dpi = 300)
 
 # ----------------- mean count per hour of day for one week --------------------
+
 mean_per_hour <- data %>%
   filter(
     Date >= as.Date("2026-06-29"), 
