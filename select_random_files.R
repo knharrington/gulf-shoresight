@@ -26,7 +26,7 @@ site_selector <- function(n, site_list, start_date, end_date) {
       )
     } else {
       site_times <- seq(
-        from = as.POSIXct(paste0(start_date, " 01:00:00")),
+        from = as.POSIXct(paste0(start_date, " 00:00:00")),
         to = as.POSIXct(paste0(end_date, " 23:00:00")),
         by = "1 hour"
       )
