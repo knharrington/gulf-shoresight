@@ -214,7 +214,7 @@ ggsave(filename = paste0("figures/diff_count_weekday_", min(diff_weekday$Date), 
 
 # ----------------- mean count per hour of day for one week --------------------
 
-mean_per_hour <- data %>%
+count_per_hour <- data %>%
   filter(
     Date >= as.Date("2026-06-29"), 
     Date <= as.Date("2026-07-05")
@@ -225,7 +225,9 @@ mean_per_hour <- data %>%
   group_by(Port, Date, Hour, Direction, .drop=FALSE) %>%
   summarise(
     Count = n()
-  ) %>%
+  ) 
+  
+mean_per_hour <- count_per_hour %>%
   group_by(Port, Hour, Direction, .drop=FALSE) %>%
   summarise(
     Mean_Count = mean(Count),
@@ -253,12 +255,42 @@ mean_count_hour <- ggplot(data=mean_per_hour, aes(x=Hour)) +
   theme_tator_light() +
   facet_wrap(~Port) +
   labs(
-    title = paste0("Week of 2026-06-29"),
+    title = paste0("Week of ", min(count_per_hour$Date)),
     y = "Mean Count",
     x = "Hour"
   ) 
 
-ggsave(filename = paste0("figures/mean_count_hour_", format(Sys.Date(), "%Y-%m-%d"), ".png"), 
+ggsave(filename = paste0("figures/mean_count_hour_", min(count_per_hour$Date), ".png"), 
        plot = mean_count_hour, width = 8, height = 5, dpi = 300)
 
+# ----------------- count distribution per hour of day for one week ------------
 
+count_hour_whiskers <- ggplot(data=count_per_hour, aes(x=Hour)) +
+  geom_boxplot(aes(y=Count, color = Direction), outlier.size=1) +
+  scale_color_manual(values = c("Entering" = entering_col, "Exiting" = exiting_col)) +
+  scale_y_continuous(breaks = seq(0, max(count_per_hour$Count)+10, 10)) +
+  theme_tator_light() +
+  facet_wrap(~Port) +
+  labs(
+    title = paste0("Week of 2026-06-29"),
+    y = "Count",
+    x = "Hour"
+  ) 
+
+ggsave(filename = paste0("figures/count_hour_whiskers_", min(count_per_hour$Date), ".png"), 
+       plot = count_hour_whiskers, width = 8, height = 5, dpi = 300)
+
+count_hour_violin <- ggplot(data=count_per_hour, aes(x=Hour)) +
+  geom_violin(aes(y=Count, color = Direction), scale="width") +
+  scale_color_manual(values = c("Entering" = entering_col, "Exiting" = exiting_col)) +
+  scale_y_continuous(breaks = seq(0, max(count_per_hour$Count)+10, 10)) +
+  theme_tator_light() +
+  facet_wrap(~Port) +
+  labs(
+    title = paste0("Week of 2026-06-29"),
+    y = "Count",
+    x = "Hour"
+  )
+
+ggsave(filename = paste0("figures/count_hour_violin_", min(count_per_hour$Date), ".png"), 
+       plot = count_hour_violin, width = 8, height = 5, dpi = 300)
